@@ -79,7 +79,8 @@ def conditions_for_policy(policy_id):
     conditions = {}
     for condition_type in condition_types:
         results = get_conditions(policy_id, condition_type)
-        conditions.update(results)
+        if results[condition_type + 's']:
+            conditions.update(results)
     return conditions
 
 
