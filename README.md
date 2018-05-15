@@ -61,6 +61,7 @@ This requires python 3, and the libraries listed in requirements.txt. You can in
 In a checkout of this repository, either of these should work:
 
 `python setup.py install`
+
 `pip install .`
 
 
