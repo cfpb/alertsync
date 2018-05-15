@@ -6,8 +6,6 @@
 $ alertsync download --policy-name "API Health" --output api_health.yaml
 
 $ cat api_health.yaml 
-conditions: []
-external_service_conditions: []
 incident_preference: PER_CONDITION
 name: EXT API Health
 nrql_conditions:
@@ -27,8 +25,6 @@ nrql_conditions:
   terms:
   - {duration: '10', operator: above, priority: critical, threshold: '2', time_function: any}
   value_function: sum
-plugins_conditions: []
-synthetics_conditions: []
 
 # make some changes, and then...
 
