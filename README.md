@@ -31,7 +31,9 @@ nrql_conditions:
 $ alertsync upload api_health.yaml
 ```
 
-The data format corresponds pretty strictly to the API's. A [policy](https://docs.newrelic.com/docs/alerts/rest-api-alerts/new-relic-alerts-rest-api/rest-api-calls-new-relic-alerts#policies) really only has a name, and an "incident preference". The remainder of the file are the conditions grouped by type.
+## Data format
+
+The data format corresponds pretty strictly to the API's (aside from being YAML instead of JSON). A [policy](https://docs.newrelic.com/docs/alerts/rest-api-alerts/new-relic-alerts-rest-api/rest-api-calls-new-relic-alerts#policies) really only has a name, and an "incident preference". The remainder of the file are the conditions grouped by type.
 
 The plain "conditions" refers to [APM, browser, and mobile conditions](https://docs.newrelic.com/docs/alerts/rest-api-alerts/new-relic-alerts-rest-api/rest-api-calls-new-relic-alerts#conditions)
 
@@ -44,6 +46,37 @@ The others are:
 
 You should note that [there are condition types not supported by the API](https://docs.newrelic.com/docs/alerts/rest-api-alerts/new-relic-alerts-rest-api/rest-api-calls-new-relic-alerts#excluded), and that this tool does not yet support Infrastructure conditions.
 
+## Policy Templates
+
+If you include a `--vars` argument with one or more key=value pairs in your `upload` command, then the policy will be interpreted as a Jinja2 template and rendered with those values. For a trivial example, consider a policy snippet that looks like this:
+
+```yaml
+name: {{environment.upper()}} Health
+incident_preference: PER_CONDITION
+nrql_conditions:
+- enabled: true
+  id: 2810686
+  name: No reported health checks
+  nrql: {query: SELECT count(*) from HealthCheck where environment='{{environment}}', since_value: '3'}
+  terms:
+  - {duration: '10', operator: below, priority: critical, threshold: '1', time_function: any}
+  value_function: sum
+- enabled: true
+  id: 2810687
+  name: Any tests failing
+  nrql: {query: SELECT count(*) from HealthCheck where success = 0 and environment
+      ='{{environment}}', since_value: '3'}
+  runbook_url: https://insights.newrelic.com/accounts/670562/dashboards/554146
+  terms:
+  - {duration: '10', operator: above, priority: critical, threshold: '2', time_function: any}
+  value_function: sum
+```
+
+The command:
+
+`alertsync upload foo.yaml --vars environment=prod`
+
+Will create an alert policy called 'PRODUCTION HEALTH', with all of the nrql queries limited to results where 'environment' equals 'production'.
 
 
 ## Dependencies
