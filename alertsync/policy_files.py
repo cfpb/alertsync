@@ -1,7 +1,11 @@
 import yaml
+import jinja2
 
 
-def parse(yaml_policy):
+def parse(yaml_policy, vars=None):
+    if vars:
+        policy_template = jinja2.Template(yaml_policy)
+        yaml_policy = policy_template.render(**vars)
     document = yaml.load(yaml_policy)
     policy = {}
     conditions = {}

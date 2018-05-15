@@ -11,8 +11,18 @@ from .nr_api import (create_or_update_policy,
 from .policy_files import parse, build_document
 
 
+class VarsAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        result = {}
+        for pair in values:
+            key, val = pair.split('=')
+            result[key] = val
+        setattr(namespace, self.dest, result)
+
+
 def upload(args):
-    read_policy, new_conditions = parse(args.yaml_policy.read())
+    read_policy, new_conditions = parse(args.yaml_policy.read(),
+                                        vars=args.vars)
 
     policy = create_or_update_policy(read_policy['name'],
                                      read_policy['incident_preference'],
@@ -53,6 +63,7 @@ def main():
     upload_parser = subparsers.add_parser('upload')
     upload_parser.add_argument('yaml_policy', type=argparse.FileType('r'))
     upload_parser.add_argument('--policy-id', type=int)
+    upload_parser.add_argument('--vars', nargs='*', action=VarsAction)
 
     upload_parser.set_defaults(func=upload)
 
