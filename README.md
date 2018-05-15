@@ -1,92 +1,121 @@
-#### CFPB Open Source Project Template Instructions
+# Alertsync
 
-1. Create a new project.
-2. [Copy these files into the new project](#installation)
-3. Update the README, replacing the contents below as prescribed.
-4. Add any libraries, assets, or hard dependencies whose source code will be included
-   in the project's repository to the _Exceptions_ section in the [TERMS](TERMS.md).
-  - If no exceptions are needed, remove that section from TERMS.
-5. If working with an existing code base, answer the questions on the [open source checklist](opensource-checklist.md)
-6. Delete these instructions and everything up to the _Project Title_ from the README.
-7. Write some great software and tell people about it.
+**Description**:  manage your New Relic alerts, as code
 
-> Keep the README fresh! It's the first thing people see and will make the initial impression.
+```bash
+$ alertsync download --policy-name "API Health" --output api_health.yaml
 
-## Installation
+$ cat api_health.yaml 
+conditions: []
+external_service_conditions: []
+incident_preference: PER_CONDITION
+name: EXT API Health
+nrql_conditions:
+- enabled: true
+  id: 1283812
+  name: No reported health checks
+  nrql: {query: SELECT count(*) from APIHealthCheck where environment='ext', since_value: '3'}
+  terms:
+  - {duration: '10', operator: below, priority: critical, threshold: '1', time_function: any}
+  value_function: sum
+- enabled: true
+  id: 1283797
+  name: Any API tests failing
+  nrql: {query: SELECT count(*) from APIHealthCheck where success = 0 and environment
+      ='ext', since_value: '3'}
+  runbook_url: https://insights.newrelic.com/accounts/XXXXXX/dashboards/554146
+  terms:
+  - {duration: '10', operator: above, priority: critical, threshold: '2', time_function: any}
+  value_function: sum
+plugins_conditions: []
+synthetics_conditions: []
 
-To install all of the template files, run the following script from the root of your project's directory:
+# make some changes, and then...
 
+$ alertsync upload api_health.yaml
 ```
-bash -c "$(curl -s https://raw.githubusercontent.com/CFPB/development/master/open-source-template.sh)"
-```
 
-----
+The data format corresponds pretty strictly to the API's. A [policy](https://docs.newrelic.com/docs/alerts/rest-api-alerts/new-relic-alerts-rest-api/rest-api-calls-new-relic-alerts#policies) really only has a name, and an "incident preference". The remainder of the file are the conditions grouped by type.
 
-# Project Title
+The plain "conditions" refers to [APM, browser, and mobile conditions](https://docs.newrelic.com/docs/alerts/rest-api-alerts/new-relic-alerts-rest-api/rest-api-calls-new-relic-alerts#conditions)
 
-**Description**:  Put a meaningful, short, plain-language description of what
-this project is trying to accomplish and why it matters.
-Describe the problem(s) this project solves.
-Describe how this software can improve the lives of its audience.
+The others are:
 
-Other things to include:
+- [nrql_conditions](https://docs.newrelic.com/docs/alerts/rest-api-alerts/new-relic-alerts-rest-api/rest-api-calls-new-relic-alerts#conditions-nrql)
+- [external_service_conditions](https://docs.newrelic.com/docs/alerts/rest-api-alerts/new-relic-alerts-rest-api/rest-api-calls-new-relic-alerts#ext-services-conditions)
+- [synthetics_conditions](https://docs.newrelic.com/docs/alerts/rest-api-alerts/new-relic-alerts-rest-api/rest-api-calls-new-relic-alerts#synthetics-conditions)
+- [plugins_conditions](https://docs.newrelic.com/docs/alerts/rest-api-alerts/new-relic-alerts-rest-api/rest-api-calls-new-relic-alerts#plugins-conditions)
 
-  - **Technology stack**: Indicate the technological nature of the software, including primary programming language(s) and whether the software is intended as standalone or as a module in a framework or other ecosystem.
-  - **Status**:  Alpha, Beta, 1.1, etc. It's OK to write a sentence, too. The goal is to let interested people know where this project is at. This is also a good place to link to the [CHANGELOG](CHANGELOG.md).
-  - **Links to production or demo instances**
-  - Describe what sets this apart from related-projects. Linking to another doc or page is OK if this can't be expressed in a sentence or two.
+You should note that [there are condition types not supported by the API](https://docs.newrelic.com/docs/alerts/rest-api-alerts/new-relic-alerts-rest-api/rest-api-calls-new-relic-alerts#excluded), and that this tool does not yet support Infrastructure conditions.
 
-
-**Screenshot**: If the software has visual components, place a screenshot after the description; e.g.,
-
-![](https://raw.githubusercontent.com/cfpb/open-source-project-template/master/screenshot.png)
 
 
 ## Dependencies
 
-Describe any dependencies that must be installed for this software to work.
-This includes programming languages, databases or other storage mechanisms, build tools, frameworks, and so forth.
-If specific versions of other software are required, or known not to work, call that out.
+This requires python 3, and the libraries listed in requirements.txt. You can install them with
+
+`pip install -r requirements.txt`
 
 ## Installation
 
-Detailed instructions on how to install, configure, and get the project running.
-This should be frequently tested to ensure reliability. Alternatively, link to
-a separate [INSTALL](INSTALL.md) document.
+In a checkout of this repository, either of these should work:
+
+`python setup.py install`
+
+`pip install .`
+
 
 ## Configuration
 
-If the software is configurable, describe it in detail, either here or in other documentation to which you link.
+The software expects the environment variable 'NR_API_KEY' to exist, and contain a valid New Relic API key
 
 ## Usage
 
-Show users how to use the software.
-Be specific.
-Use appropriate formatting when showing code snippets.
+There are currently two subcommands, `upload` and `download`
 
-## How to test the software
+### upload
 
-If the software includes automated tests, detail how to run those tests.
+```bash
+$ alertsync upload --help
+usage: alertsync upload [-h] [--policy-id POLICY_ID] yaml_policy
+
+positional arguments:
+  yaml_policy
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --policy-id POLICY_ID
+```
+
+### download
+
+```bash
+$ alertsync download  --help
+usage: alertsync download [-h]
+                          (--policy-name POLICY_NAME | --policy-id POLICY_ID)
+                          [--output OUTPUT]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --policy-name POLICY_NAME
+  --policy-id POLICY_ID
+  --output OUTPUT
+```
 
 ## Known issues
 
-Document any known significant shortcomings with the software.
+- We currently aren't managing notification channels at all, those must be configured using newrelic.com.
+- We don't currently download or upload [infrastructure conditions](https://docs.newrelic.com/docs/infrastructure/new-relic-infrastructure/infrastructure-alert-conditions/rest-api-calls-new-relic-infrastructure-alerts)
 
 ## Getting help
 
-Instruct users how to get help with this software; this might include links to an issue tracker, wiki, mailing list, etc.
-
-**Example**
 
 If you have questions, concerns, bug reports, etc, please file an issue in this repository's Issue Tracker.
 
 ## Getting involved
 
-This section should detail why people should get involved and describe key areas you are
-currently focusing on; e.g., trying to get feedback on features, fixing certain bugs, building
-important pieces, etc.
 
-General instructions on _how_ to contribute should be stated with a link to [CONTRIBUTING](CONTRIBUTING.md).
+See [CONTRIBUTING](CONTRIBUTING.md).
 
 
 ----
