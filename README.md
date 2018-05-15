@@ -35,6 +35,20 @@ synthetics_conditions: []
 $ alertsync upload api_health.yaml
 ```
 
+The data format corresponds pretty strictly to the API's. A [policy](https://docs.newrelic.com/docs/alerts/rest-api-alerts/new-relic-alerts-rest-api/rest-api-calls-new-relic-alerts#policies) really only has a name, and an "incident preference". The remainder of the file are the conditions grouped by type.
+
+The plain "conditions" refers to [APM, browser, and mobile conditions](https://docs.newrelic.com/docs/alerts/rest-api-alerts/new-relic-alerts-rest-api/rest-api-calls-new-relic-alerts#conditions)
+
+The others are:
+
+- [nrql_conditions](https://docs.newrelic.com/docs/alerts/rest-api-alerts/new-relic-alerts-rest-api/rest-api-calls-new-relic-alerts#conditions-nrql)
+- [external service conditions](https://docs.newrelic.com/docs/alerts/rest-api-alerts/new-relic-alerts-rest-api/rest-api-calls-new-relic-alerts#ext-services-conditions)
+- [synthetics](https://docs.newrelic.com/docs/alerts/rest-api-alerts/new-relic-alerts-rest-api/rest-api-calls-new-relic-alerts#synthetics-conditions)
+- [plugins](https://docs.newrelic.com/docs/alerts/rest-api-alerts/new-relic-alerts-rest-api/rest-api-calls-new-relic-alerts#plugins-conditions)
+
+You should note that [there are condition types not supported by the API](https://docs.newrelic.com/docs/alerts/rest-api-alerts/new-relic-alerts-rest-api/rest-api-calls-new-relic-alerts#excluded), and that this tool does not yet support Infrastructure conditions.
+
+
 
 ## Dependencies
 
