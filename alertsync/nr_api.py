@@ -29,7 +29,8 @@ condition_types = [
     'external_service_condition',
     'synthetics_condition',
     'plugins_condition',
-    'nrql_condition'
+    'nrql_condition',
+    'infrastructure_condition'
 ]
 
 
@@ -79,18 +80,23 @@ def conditions_for_policy(policy_id):
     conditions = {}
     for condition_type in condition_types:
         results = get_conditions(policy_id, condition_type)
-        if results[condition_type + 's']:
+        if 'data' in results:  # an infrastructure result
+            conditions[condition_type + 's'] = results['data']
+        elif results[condition_type + 's']:
             conditions.update(results)
     return conditions
 
 
 def create_condition(policy_id, condition_type, condition):
-    url = CREATE_CONDITION_TEMPLATE.format(policy_id=policy_id,
-                                           condition_type=condition_type)
-    if 'id' in condition:
-        del condition['id']
+    if condition_type == 'infrastructure_condition':
+        url = "https://infra-api.newrelic.com/v2/alerts/conditions"
+    else:
+        url = CREATE_CONDITION_TEMPLATE.format(policy_id=policy_id,
+                                               condition_type=condition_type)
+        if 'id' in condition:
+            del condition['id']
 
-    details = {condition_type: condition}
+        details = {condition_type: condition}
     session.post(url, json=details)
 
 
@@ -102,13 +108,21 @@ def create_conditions(policy_id, new_conditions):
 
 
 def get_conditions(policy_id, condition_type):
-    url = LIST_CONDITION_TEMPLATE.format(condition_type=condition_type)
+    if condition_type == 'infrastructure_condition':
+        url = 'https://infra-api.newrelic.com/v2/alerts/conditions'
+        return session.get(url, params={'policy_id': policy_id}).json()
+    else:
+        url = LIST_CONDITION_TEMPLATE.format(condition_type=condition_type)
     return session.get(url, data={'policy_id': policy_id}).json()
 
 
 def delete_condition(policy_id, condition_id, condition_type):
-    url = DELETE_CONDITION_TEMPLATE.format(condition_type=condition_type,
-                                           condition_id=condition_id)
+    if condition_type == 'infrastructure_condition':
+        template = 'https://infra-api.newrelic.com/v2/alerts/conditions/{condition_id}' # noqa
+        url = template.format(condition_id=condition_id)
+    else:
+        url = DELETE_CONDITION_TEMPLATE.format(condition_type=condition_type,
+                                               condition_id=condition_id)
     session.delete(url)
 
 
