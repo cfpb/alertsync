@@ -90,6 +90,8 @@ def conditions_for_policy(policy_id):
 def create_condition(policy_id, condition_type, condition):
     if condition_type == 'infrastructure_condition':
         url = "https://infra-api.newrelic.com/v2/alerts/conditions"
+        condition['policy_id'] - policy_id
+        details = {'data': condition}
     else:
         url = CREATE_CONDITION_TEMPLATE.format(policy_id=policy_id,
                                                condition_type=condition_type)
