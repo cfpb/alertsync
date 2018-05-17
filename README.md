@@ -66,7 +66,7 @@ nrql_conditions:
   name: Any tests failing
   nrql: {query: SELECT count(*) from HealthCheck where success = 0 and environment
       ='{{environment}}', since_value: '3'}
-  runbook_url: https://insights.newrelic.com/accounts/670562/dashboards/554146
+  runbook_url: https://insights.newrelic.com/accounts/XXXXXX/dashboards/554146
   terms:
   - {duration: '10', operator: above, priority: critical, threshold: '2', time_function: any}
   value_function: sum
