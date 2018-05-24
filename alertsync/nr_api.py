@@ -1,8 +1,14 @@
 import os
 import requests
 
+from collections import namedtuple
+from urllib.parse import urljoin
+
 session = requests.Session()
 session.headers.update({'X-Api-Key': os.environ['NR_API_KEY']})
+
+
+ConditionChange = namedtuple('ConditionChange', ['current', 'new'])
 
 
 class NewRelicAPIError(Exception):
@@ -20,17 +26,64 @@ class NoSuchPolicyID(Exception):
 class NoSuchPolicyName(Exception):
     pass
 
-CREATE_CONDITION_TEMPLATE = 'https://api.newrelic.com/v2/alerts_{condition_type}s/policies/{policy_id}.json' # noqa
-LIST_CONDITION_TEMPLATE = 'https://api.newrelic.com/v2/alerts_{condition_type}s.json' # noqa
-DELETE_CONDITION_TEMPLATE = 'https://api.newrelic.com/v2/alerts_{condition_type}s/{condition_id}.json' # noqa
+class ConditionType(object):
+    name = 'condition'
+    site = 'https://api.newrelic.com/v2/'
+
+    @property
+    def plural(self):
+        return self.name + 's'
+
+    def url(self, template, **kwargs):
+        kwargs['plural'] = self.plural
+        path = template.format(**kwargs)
+        return urljoin(self.site, path)
+
+    def update_url(self, condition_id):
+        return self.url(
+            'alerts_{plural}/{condition_id}.json',
+            condition_id=condition_id)
+
+    def list_url(self):
+        return self.url('alerts_{plural}.json')
+
+    def create_url(self, policy_id):
+        return self.url(
+            'alerts_{plural}/policies/{policy_id}.json',
+            policy_id=policy_id)
+
+    def list(self, policy_id):
+        return session.get(url, data={'policy_id': policy_id}).json()
+
+    def create(self, policy_id, policy):
+class ExternalServiceConditionType(ConditionType):
+    name = 'external_service_condition'
+
+
+class SyntheticsConditionType(ConditionType):
+    name = 'synthetics_condition'
+
+
+class PluginsConditionType(ConditionType):
+    name = 'plugins_condition'
+
+
+class NRQLConditionType(ConditionType):
+    name = 'nrql_condition'
+
+
+class InfrastructureConditionType(ConditionType):
+    name = 'infrastructure_condition'
+    site = 'https://infra-api.newrelic.com/v2/'
+
 
 condition_types = [
-    'condition',
-    'external_service_condition',
-    'synthetics_condition',
-    'plugins_condition',
-    'nrql_condition',
-    'infrastructure_condition'
+    ConditionType(),
+    ExternalServiceConditionType(),
+    SyntheticsConditionType(),
+    PluginsConditionType(),
+    NRQLConditionType(),
+    InfraStructureConditionType()
 ]
 
 
@@ -102,23 +155,83 @@ def create_condition(policy_id, condition_type, condition):
     session.post(url, json=details)
 
 
-def create_conditions(policy_id, new_conditions):
-    for plural_type, conditions in new_conditions.items():
-        condition_type = plural_type[:-1]
-        for condition in conditions:
-            create_condition(policy_id, condition_type, condition)
+def compare_updated_conditions(policy_id, condition_type, updated_conditions):
+    if condition_type == 'infrastructure_conditions':
+        key = 'data'
+    else:
+        key = condition_type
+
+    search_result = get_conditions(
+            policy_id,
+            condition_type)
+
+    current_conditions = search_result[key]
+
+    if not (current_conditions or updated_conditions):
+        return list()   # nothing to do if both lists are empty
+
+    current_lookup = {c['id']: c for c in current_conditions}
+    lookup_by_name = {c['name']: c for c in current_conditions}
+
+    def fix_condition_id(condition):
+        if 'id' in condition:
+            if condition['id'] in current_lookup.keys():
+                return condition
+            else:
+                del condition['id']
+
+        if condition['name'] in lookup_by_name:
+            condition['id'] = lookup_by_name[condition['name']]['id']
+
+        return condition
+    updated_conditions = map(fix_condition_id, updated_conditions)
+    seen_condition_ids = []
+    for condition in updated_conditions:
+        if 'id' not in condition:
+            yield ConditionChange(current=None,
+                                  new=condition)  # no existing match
+        else:
+            seen_condition_ids.append(condition['id'])
+            yield ConditionChange(
+                    current=current_lookup[condition['id']],
+                    new=condition)
+    for condition in current_conditions:
+        if condition['id'] not in seen_condition_ids:
+            # no "partner" in the new conditions, so delete it
+            yield ConditionChange(current=condition,
+                                  new=None)
+
+
+def update_conditions(policy_id, new_conditions):
+    for condition_type in condition_types:
+        condition_type_plural = condition_type + 's'
+        for change in compare_updated_conditions(
+                policy_id,
+                condition_type_plural,
+                new_conditions.get(condition_type_plural, []),
+                ):
+            if change.current and not change.new:
+                delete_condition(change.current['id'], condition_type)
+            if change.new and not change.current:
+                create_condition(policy_id, condition_type, condition)
+
 
 
 def get_conditions(policy_id, condition_type):
+    return condition_type.list(policy_id=policy_id)
+
+
+def update_condition(condition, condition_type):
     if condition_type == 'infrastructure_condition':
-        url = 'https://infra-api.newrelic.com/v2/alerts/conditions'
-        return session.get(url, params={'policy_id': policy_id}).json()
+        template = 'https://infra-api.newrelic.com/v2/alerts/conditions/{id}' # noqa
+        url = template.format(condition)
     else:
-        url = LIST_CONDITION_TEMPLATE.format(condition_type=condition_type)
-    return session.get(url, data={'policy_id': policy_id}).json()
+        url = DELETE_CONDITION_TEMPLATE.format(condition_type=condition_type,
+                                               condition_id=condition_id)
+    session.delete(url)
 
 
-def delete_condition(policy_id, condition_id, condition_type):
+def delete_condition(condition_id, condition_type):
     if condition_type == 'infrastructure_condition':
         template = 'https://infra-api.newrelic.com/v2/alerts/conditions/{condition_id}' # noqa
         url = template.format(condition_id=condition_id)

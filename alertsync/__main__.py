@@ -4,8 +4,7 @@ import yaml
 from .nr_api import (create_or_update_policy,
                      get_policy,
                      conditions_for_policy,
-                     delete_all_conditions,
-                     create_conditions,
+                     update_conditions,
                      find_policy)
 
 from .policy_files import parse, build_document
@@ -28,8 +27,7 @@ def upload(args):
                                      read_policy['incident_preference'],
                                      args.policy_id)
 
-    delete_all_conditions(policy['id'])
-    create_conditions(policy['id'], new_conditions)
+    update_conditions(policy['id'], new_conditions)
 
 
 def download(args):
