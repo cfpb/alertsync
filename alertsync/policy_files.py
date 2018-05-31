@@ -29,7 +29,7 @@ def parse(yaml_policy, vars=None, ignore_condition_ids=False):
         else:
             conditions[key] = value
 
-    if ignore_condition_ids:
+    if not ignore_condition_ids:
         for condition_type_name, condition_list in conditions.items():
             try:
                 assert_field_unique(condition_list, 'id')

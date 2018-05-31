@@ -106,6 +106,7 @@ class ConditionType(object):
         url = self.singleton_url(condition_id)
         api.delete(url)
 
+
 class ExternalServiceConditionType(ConditionType):
     name = 'external_service_condition'
 
