@@ -49,7 +49,7 @@ def main():
 
     download_parser = subparsers.add_parser('download')
     policy_query_args = download_parser.add_mutually_exclusive_group(
-            required=True)
+        required=True)
     policy_query_args.add_argument('--policy-name')
     policy_query_args.add_argument('--policy-id', type=int)
     download_parser.add_argument('--output',

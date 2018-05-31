@@ -141,8 +141,8 @@ class InfrastructureConditionType(ConditionType):
 
     def list_url(self, policy_id):
         return self.url(
-                'alerts/conditions?policy_id={policy_id}',
-                policy_id=policy_id)
+            'alerts/conditions?policy_id={policy_id}',
+            policy_id=policy_id)
 
     def create_url(self, policy_id):
         return urljoin(self.site, 'alerts/conditions')
@@ -150,7 +150,7 @@ class InfrastructureConditionType(ConditionType):
     def list(self, policy_id):
         return api.get(self.list_url(
             policy_id=policy_id),
-            ).json()[self.dict_key]
+        ).json()[self.dict_key]
 
     def create(self, policy_id, condition):
         condition['policy_id'] = policy_id
@@ -251,8 +251,8 @@ def compare_updated_conditions(policy_id, condition_type, updated_conditions):
         else:
             seen_condition_ids.append(condition['id'])
             yield ConditionChange(
-                    current=current_lookup[condition['id']],
-                    new=condition)
+                current=current_lookup[condition['id']],
+                new=condition)
     for condition in current_conditions:
         if condition['id'] not in seen_condition_ids:
             # no "partner" in the new conditions, so delete it
@@ -266,7 +266,7 @@ def update_conditions(policy_id, new_conditions):
                 policy_id,
                 condition_type,
                 new_conditions.get(condition_type.plural, []),
-                ):
+        ):
             if change.current and not change.new:
                 condition_type.delete(change.current['id'])
             elif change.new and not change.current:
