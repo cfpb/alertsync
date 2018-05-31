@@ -1,8 +1,21 @@
+import sys
 import yaml
 import jinja2
 
 
-def parse(yaml_policy, vars=None):
+class DuplicateValueException(Exception):
+    pass
+
+
+def assert_field_unique(iterable, key):
+    seen_values = set()
+    for obj in iterable:
+        if key in obj:
+            assert obj[key] not in seen_values
+            seen_values.add(obj[key])
+
+
+def parse(yaml_policy, vars=None, ignore_condition_ids=False):
     if vars:
         policy_template = jinja2.Template(yaml_policy)
         yaml_policy = policy_template.render(**vars)
@@ -15,6 +28,14 @@ def parse(yaml_policy, vars=None):
             policy[key] = value
         else:
             conditions[key] = value
+
+    if ignore_condition_ids:
+        for condition_type_name, condition_list in conditions.items():
+            try:
+                assert_field_unique(condition_list, 'id')
+            except AssertionError:
+                sys.exit(
+                    "Duplicate condition ID found in %s" % condition_type_name)
 
     return policy, conditions
 
