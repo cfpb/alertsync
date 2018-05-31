@@ -43,8 +43,9 @@ The others are:
 - [external_service_conditions](https://docs.newrelic.com/docs/alerts/rest-api-alerts/new-relic-alerts-rest-api/rest-api-calls-new-relic-alerts#ext-services-conditions)
 - [synthetics_conditions](https://docs.newrelic.com/docs/alerts/rest-api-alerts/new-relic-alerts-rest-api/rest-api-calls-new-relic-alerts#synthetics-conditions)
 - [plugins_conditions](https://docs.newrelic.com/docs/alerts/rest-api-alerts/new-relic-alerts-rest-api/rest-api-calls-new-relic-alerts#plugins-conditions)
+- [infrastructure_conditions](https://docs.newrelic.com/docs/infrastructure/new-relic-infrastructure/infrastructure-alert-conditions/rest-api-calls-new-relic-infrastructure-alerts#condition-types)
 
-You should note that [there are condition types not supported by the API](https://docs.newrelic.com/docs/alerts/rest-api-alerts/new-relic-alerts-rest-api/rest-api-calls-new-relic-alerts#excluded), and that this tool does not yet support Infrastructure conditions.
+You should note that [there are condition types not supported by the API](https://docs.newrelic.com/docs/alerts/rest-api-alerts/new-relic-alerts-rest-api/rest-api-calls-new-relic-alerts#excluded).
 
 ## Policy Templates
 
@@ -134,7 +135,6 @@ optional arguments:
 ## Known issues
 
 - We currently aren't managing notification channels at all, those must be configured using newrelic.com.
-- We don't currently download or upload [infrastructure conditions](https://docs.newrelic.com/docs/infrastructure/new-relic-infrastructure/infrastructure-alert-conditions/rest-api-calls-new-relic-infrastructure-alerts)
 
 ## Getting help
 
