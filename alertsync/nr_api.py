@@ -11,8 +11,10 @@ class APIRequestFailure(Exception):
 
 
 class ApiWrapper(object):
-    session = requests.Session()
-    session.headers.update({'X-Api-Key': os.environ['NR_API_KEY']})
+    def __init__(self):
+        self.session = requests.Session()
+        self.session.headers.update(
+            {'X-Api-Key': os.environ.get('NR_API_KEY')})
 
     def __getattr__(self, attr):
         method = getattr(self.session, attr)
@@ -74,7 +76,8 @@ class ConditionType(object):
             'alerts_{plural}/{condition_id}.json',
             condition_id=condition_id)
 
-    def list_url(self):
+    def list_url(self, policy_id=None):
+        # policy_id is here for consistency sake
         return self.url('alerts_{plural}.json')
 
     def singleton_url(self, condition_id):

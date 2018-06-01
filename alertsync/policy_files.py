@@ -14,6 +14,8 @@ def assert_field_unique(iterable, key):
             assert obj[key] not in seen_values
             seen_values.add(obj[key])
 
+    return True
+
 
 def parse(yaml_policy, vars=None, ignore_condition_ids=False):
     if vars:
