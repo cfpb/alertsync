@@ -92,7 +92,7 @@ class ConditionType(object):
     def list(self, policy_id):
         result = api.get(self.list_url(),
                          data={'policy_id': policy_id}).json()
-        return reversed(result[self.plural])
+        return list(reversed(result[self.plural]))
 
     def create(self, policy_id, condition):
         details = {self.dict_key: condition}
