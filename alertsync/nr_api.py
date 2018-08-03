@@ -1,5 +1,6 @@
 import os
 import requests
+import json
 
 from collections import namedtuple
 from urllib.parse import urljoin
@@ -22,6 +23,7 @@ class ApiWrapper(object):
         def do_api_call(*args, **kwargs):
             response = method(*args, **kwargs)
             if response.status_code >= 300:
+                print(json.dumps(kwargs['json']) )
                 raise APIRequestFailure("(%s) %s %s" % (
                     attr, args[0], response.text))
             return response
@@ -96,7 +98,9 @@ class ConditionType(object):
 
     def create(self, policy_id, condition):
         details = {self.dict_key: condition}
-        condition['policy_id'] = policy_id
+        # condition['policy_id'] = policy_id
+        if 'policy_id' in condition:
+            del condition['policy_id']
         return api.post(self.create_url(policy_id),
                         json=details).json()
 

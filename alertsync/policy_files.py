@@ -18,9 +18,8 @@ def assert_field_unique(iterable, key):
 
 
 def parse(yaml_policy, vars=None, ignore_condition_ids=False):
-    if vars:
-        policy_template = jinja2.Template(yaml_policy)
-        yaml_policy = policy_template.render(**vars)
+    policy_template = jinja2.Template(yaml_policy)
+    yaml_policy = policy_template.render(**vars or {})
     document = yaml.load(yaml_policy)
     policy = {}
     conditions = {}
