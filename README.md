@@ -1,3 +1,7 @@
+Current status: we are not currently using or maintaining this code
+
+
+
 # Alertsync
 
 **Description**:  manage your New Relic alerts, as code
